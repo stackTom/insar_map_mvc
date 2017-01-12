@@ -157,21 +157,6 @@ public function getPoints() {
 }
 }
 
-private function getExtraAttributesForAreas() {
-  $sql = "SELECT * FROM extra_attributes";
-  $attributes = DB::select($sql);
-  $attributesDict = [];
-
-  foreach ($attributes as $attribute) {
-    $key = $attribute->attributekey;
-    $value = $attribute->attributevalue;
-
-    $attributesDict[$attribute->area_id][$key] = $value;
-  }
-
-  return $attributesDict;
-}
-
 public function getAreas() {
   $json = array();
 
@@ -190,7 +175,6 @@ public function getAreas() {
       $userPermissions = $permissionController->getUserPermissions(Auth::id(), "users", "user_permissions", ["users.id = user_permissions.user_id"]);
       array_push($userPermissions, "public"); // every user must have public permissions
     }
-    $extra_attributes = $this->getExtraAttributesForAreas();
 
     $json["areas"] = [];
     foreach ($areas as $area) {
@@ -217,17 +201,7 @@ public function getAreas() {
           $currentArea["country"] = $area->country;
           $currentArea["attributekeys"] = $this->postgresToPHPArray($area->attributekeys);
           $currentArea["attributevalues"] = $this->postgresToPHPArray($area->attributevalues);
-          $currentArea["decimal_dates"] = $this->postgresToPHPFloatArray($area->decimaldates);
           $currentArea["region"] = $area->region;
-
-          $bindings = [$area->id];
-
-          if (isset($extra_attributes[$area->id])) {
-            $currentArea["extra_attributes"] = $extra_attributes[$area->id];
-          } else {
-            $currentArea["extra_attributes"] = NULL;
-          }
-
           array_push($json["areas"], $currentArea);
           continue;
         }

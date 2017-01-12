@@ -312,3 +312,5 @@ function LineSelector(map) {
 
     document.addEventListener("mousedown", that.mouseDown);
 }
+
+LineSelector.prototype = new SquareSelector(myMap);

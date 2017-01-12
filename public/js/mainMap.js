@@ -649,42 +649,6 @@ function Map(loadJSONFunc) {
                 "features": features
             };
 
-            // clustering
-            var layers = [
-                [150, '#f28cb1'],
-                [20, '#f1f075'],
-                [0, '#51bbd6']
-            ];
-
-            layers.forEach(function(layer, i) {
-                that.map.addLayer({
-                    "id": "cluster-" + i,
-                    "type": "circle",
-                    "source": id,
-                    "paint": {
-                        "circle-color": layer[1],
-                        "circle-radius": 10
-                    },
-                    "filter": i == 0 ? [">=", "point_count", layer[0]] : ["all", [">=", "point_count", layer[0]],
-                        ["<", "point_count", layers[i - 1][0]]
-                    ]
-                });
-            });
-
-            // Add a layer for the clusters' count labels
-            that.map.addLayer({
-                "id": "cluster-count",
-                "type": "symbol",
-                "source": id,
-                "layout": {
-                    "text-field": "{point_count}",
-                    "text-font": [
-                        "DIN Offc Pro Medium",
-                        "Arial Unicode MS Bold"
-                    ],
-                    "text-size": 12
-                }
-            });
         });
     };
 

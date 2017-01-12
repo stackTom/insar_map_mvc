@@ -133,6 +133,7 @@ function getGEOJSON(area) {
 
     myMap.initLayer(tileJSON, "streets");
     var styleLoadFunc = function() {
+        myMap.map.off("data", styleLoadFunc);
         overlayToggleButton.set("on");
         if (contourToggleButton.toggleState == ToggleStates.ON) {
             myMap.addContourLines();
@@ -154,12 +155,11 @@ function getGEOJSON(area) {
                 zoom: zoom
             });
 
-            myMap.map.off("style.load", styleLoadFunc);
             myMap.loadAreaMarkersExcluding([area.unavco_name]);
         }, 1000);
     };
 
-    myMap.map.on("style.load", styleLoadFunc);
+    myMap.map.on("data", styleLoadFunc);
 }
 
 function goToTab(event, id) {
@@ -429,9 +429,9 @@ function switchLayer(layer) {
             if (contourToggleButton.toggleState == ToggleStates.ON) {
                 myMap.addContourLines();
             }
-            myMap.map.off("style.load", styleLoadFunc);
+            myMap.map.off("data", styleLoadFunc);
         };
-        myMap.map.on("style.load", styleLoadFunc);
+        myMap.map.on("data", styleLoadFunc);
     } else {
         myMap.map.setStyle({
             version: 8,
@@ -456,9 +456,9 @@ function switchLayer(layer) {
                 if (contourToggleButton.toggleState == ToggleStates.ON) {
                     myMap.addContourLines();
                 }
-                myMap.map.off("style.load", styleLoadFunc);
+                myMap.map.off("data", styleLoadFunc);
             };
-            myMap.map.on("style.load", styleLoadFunc);
+            myMap.map.on("data", styleLoadFunc);
         }
     }
 

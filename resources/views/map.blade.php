@@ -96,10 +96,14 @@
       </div>
       <div id="scale-values">
         <div id="left-scale-minimum">
-          <b>-2</b>
+          <div class="form-group">
+            <input type="number" class="form-control" id="min-scale-value">
+          </div>
         </div>
         <div id="right-scale-maximum">
-          <b>2</b>
+          <div class="form-group">
+            <input type="number" class="form-control" id="max-scale-value">
+          </div>
         </div>
       </div>
     </div>
@@ -246,6 +250,7 @@
     ?>
     <script type="text/javascript" src="js/ColorScale.js"></script>
     <script type="text/javascript" src="js/AreaMarkerLayer.js"></script>
+    <script type="text/javascript" src="js/AreaAttributesController.js"></script>
     <script type="text/javascript" src="js/mainPage.js"></script>
     <script type="text/javascript" src="js/mainMap.js"></script>
     <script type="text/javascript" src="js/SquareSelector.js"></script>

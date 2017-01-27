@@ -57,13 +57,17 @@ var getlinearDetrend = function(displacements, decimal_dates, slope) {
     return detrend_array;
 }
 
+var dateToDecimal = function(date) {
+    return date.getFullYear() + getDaysElapsed(date) / 365;
+}
+
 // convert date in decimal - for example, 20060131 is Jan 31, 2006
 // 31 days have passed so decimal format = [2006 + (31/365)] = 2006.0849
 // take an array of date objects and return an array of date decimals
 var convertDatesToDecimalArray = function(date_array) {
     var decimals = [];
     for (i = 0; i < date_array.length; i++) {
-        decimals.push(date_array[i].getFullYear() + getDaysElapsed(date_array[i]) / 365);
+        decimals.push(dateToDecimal(date_array[i]));
     }
     return decimals;
 }
@@ -132,6 +136,7 @@ function Map(loadJSONFunc) {
     this.graphsController = new GraphsController();
     this.areas = null;
     this.areaFeatures = null;
+    this.colorScale = new ColorScale(-2.00, 2.00);
 
     this.areaMarkerLayer = new AreaMarkerLayer(this);
 
@@ -193,7 +198,7 @@ function Map(loadJSONFunc) {
 
         var title = pointNumber.toString();
         var query = {
-            "area": currentArea.unavco_name,
+            "area": currentArea.properties.unavco_name,
             "pointNumber": pointNumber
         };
 
@@ -326,7 +331,7 @@ function Map(loadJSONFunc) {
                                 that.graphsController.addRegressionLine(chartContainer, displacements_array);
                             }
 
-                            that.selector.recolorMap();
+                            that.selector.recolorDataset();
                         }
                     },
                     dateTimeLabelFormats: {
@@ -488,29 +493,14 @@ function Map(loadJSONFunc) {
         // console.log(attributeValues);
         // console.log(feature.properties);
 
-        // needed as mapbox doesn't return original feature
-        var markerArea = {
-            "unavco_name": unavco_name,
-            "project_name": project_name,
-            "region": feature.properties.region,
-            "coords": {
-                "latitude": lat,
-                "longitude": long,
-            },
-            "num_chunks": num_chunks,
-            "attributekeys": attributeKeys,
-            "attributevalues": attributeValues
-        };
-
-        getGEOJSON(markerArea);
+        getGEOJSON(feature);
     };
 
     // extremas: current min = -0.02 (blue), current max = 0.02 (red)
     this.initLayer = function(data, mapType) {
         var layer;
         var layerList = document.getElementById('layerList');
-        var colorScale = new ColorScale();
-        var stops = colorScale.colorsToMapboxStops(-0.02, 0.02, colorScale.jet);
+        var stops = that.colorScale.getMapboxStops();
 
         data['vector_layers'].forEach(function(el) {
             that.layers_.push({
@@ -614,8 +604,11 @@ function Map(loadJSONFunc) {
                         "region": area.region,
                         "project_name": area.project_name,
                         "num_chunks": area.num_chunks,
+                        "country": area.country,
+                        "decimal_dates": area.decimal_dates,
                         "attributekeys": area.attributekeys,
-                        "attributevalues": area.attributevalues
+                        "attributevalues": area.attributevalues,
+                        "extra_attributes": area.extra_attributes
                     }
                 };
 
@@ -791,19 +784,6 @@ function Map(loadJSONFunc) {
                     var attributeKeys = features[i].properties.attributekeys;
                     var attributeValues = features[i].properties.attributevalues;
 
-                    var markerArea = {
-                        "unavco_name": unavco_name,
-                        "project_name": project_name,
-                        "region": region,
-                        "coords": {
-                            "latitude": lat,
-                            "longitude": long,
-                        },
-                        "num_chunks": num_chunks,
-                        "attributekeys": attributeKeys,
-                        "attributevalues": attributeValues
-                    };
-
                     // make cursor change when mouse hovers over row
                     $("#areas-under-mouse-table #" + unavco_name).css("cursor", "pointer");
                     $(".preview-attributes-button").css({
@@ -822,11 +802,11 @@ function Map(loadJSONFunc) {
                     $("#" + unavco_name).click((function(area) {
                         return function(e) {
                             that.determineZoomOutZoom();
-                            clickedArea = area.unavco_name;
+                            clickedArea = area.properties.unavco_name;
                             that.areaPopup.remove();
                             getGEOJSON(area);
                         };
-                    })(markerArea));
+                    })(features[i]));
                     $("#" + unavco_name + previewButtonIDSuffix).hover((function(area) {
                         return function(e) {
                             if ($('.wrap#area-attributes-div').hasClass('active')) {
@@ -835,7 +815,7 @@ function Map(loadJSONFunc) {
                                 areaAttributesPopup.show(area);
                             }
                         };
-                    })(markerArea), function() {
+                    })(features[i]), function() {
                         $('.wrap#area-attributes-div').toggleClass('active');
                     });
                 }
@@ -859,7 +839,7 @@ function Map(loadJSONFunc) {
             console.log(that.map.getZoom());
 
             if (that.selector.bbox != null) {
-                that.selector.recolorMap();
+                that.selector.recolorDataset();
             }
 
             // reshow area markers once we zoom out enough
@@ -1090,6 +1070,26 @@ function Map(loadJSONFunc) {
 
         return name;
     };
+
+    this.refreshDataset = function() {
+        var stops = that.colorScale.getMapboxStops();
+
+        that.layers_.forEach(function(layer) {
+            if (that.map.getPaintProperty(layer.id, "circle-color")) {
+                that.map.setPaintProperty(layer.id, "circle-color", {
+                    property: 'm',
+                    stops: stops
+                });
+            }
+        });
+
+        if (that.map.getLayer("onTheFlyJSON")) {
+            that.map.setPaintProperty("onTheFlyJSON", "circle-color", {
+                property: 'm',
+                stops: stops
+            });
+        }
+    };
 }
 
 
@@ -1114,6 +1114,3 @@ function loadJSON(arg, param, callback) {
     };
     xobj.send(null);
 }
-
-var myMap = new Map(loadJSON);
-myMap.addMapToPage("map-container");
